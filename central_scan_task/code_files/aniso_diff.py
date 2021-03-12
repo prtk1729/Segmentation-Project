@@ -95,7 +95,7 @@ def read_n_convert2gray(path, gb=True):
     img = cv2.cvtColor(img_copy, cv2.COLOR_RGB2GRAY)
     return img
 
-def aniso_driver(gray_img, plot=True):
+def aniso_driver(gray_img, plot=False):
     # paths = glob.glob('/Users/prateek/Desktop/Segmetation_github/Segmentation-Project/central_scan_task/data_files/OCT_4_sample_folders/2675931_21017_0_0/*.png')
 
     for i in range(1):

@@ -6,6 +6,7 @@ import numpy as np
 import cv2
 import statistics as stats
 from test import read_n_convert2gray
+from scipy.signal import find_peaks
 
 
 def aprxTRL(path, idx):
@@ -144,7 +145,6 @@ def aprxTRL(path, idx):
 
     # ============================= Find Max, 2nd Max, Min in one A-scan ============================================
     def find2max1min(img):
-        from scipy.signal import find_peaks
         print('\n\nmax_coords', img.argmax( axis=0).shape )
         y_coords1, y_coords2, y_coords3 = [], [], []
 
@@ -164,10 +164,6 @@ def aprxTRL(path, idx):
 
             # min1
             min1 = find_min1(peaks[0][max1], a_scan_line )
-            # thresh = 10
-            # if( i >= 1 and ((min1 - gl_min1[-1]) > thresh) ):
-            #     # smooth by updating
-            #     min1 = gl_min1[-1]
             gl_min1.append(min1)
 
 
@@ -194,6 +190,68 @@ def aprxTRL(path, idx):
         return y_coords1, y_coords2, y_coords3
 
     y_coords1, y_coords2, y_coords3 = find2max1min(img)
+
+
+
+    # Find min1
+    def find_min1_with_spatial(a_scan_max_intensity_coord, a_scan_line, y_coord3):
+        '''Find just before local minima
+        Note: a_scan_max_intensity_coord is "rp" '''
+
+        # Tweak the follwoing values
+        onl_ceil_distance_from_max_intensity_coord = 50
+        onl_floor_distance_from_max_intensity_coord = 40
+
+        rnfl_coord = a_scan_max_intensity_coord
+        onl_search_space_ceil = (a_scan_max_intensity_coord - onl_ceil_distance_from_max_intensity_coord)
+        onl_search_space_floor = (a_scan_max_intensity_coord - onl_floor_distance_from_max_intensity_coord)
+
+        i = onl_search_space_ceil
+        a_scan_max1 = a_scan_max_intensity_coord
+        prev_intensity = a_scan_line[ i ] 
+        i += 1
+        while( a_scan_max1 and (a_scan_max1 <  y_coord3) ):
+            # go back
+            if( a_scan_line[ a_scan_max1] < a_scan_line[ (a_scan_max1-1) ]):
+                # 1st local_minima => stop
+                return a_scan_max1
+            a_scan_max1 -= 1
+        return 0
+
+
+
+
+
+    # ============================= Find y_coords2 for every A-scan ============================================
+    # I have y_coords3 ==> find y_coords2 with spatial_info
+    def find_y_coords2(img, y_coords3):
+        '''Takes in img ,for every A-scan find the y_coords2 
+           using the spatial_distance condaitions from equation2 '''
+
+        y_coords2, gl_max1 = [], []
+        patch = img[:, :]   
+
+        print('\n\nPatch_shape',patch.shape[0])
+        for i in range(patch.shape[1]): 
+
+            y_coord3 = y_coords3[i]
+            # min1
+            min1 = find_min1_with_spatial(peaks[0][max1], a_scan_line , y_coord3)
+            gl_min1.append(min1)
+
+        y_coords2 = gl_min1
+        return y_coords2
+
+
+
+
+
+
+
+
+
+
+
     # ===========================
 
     def postprocess_y_coords(y_coords):
